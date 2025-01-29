@@ -1,4 +1,4 @@
-import 'package:flut_project/SettingsPage.dart';
+import 'package:flut_project/Profile.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'FollowingPage.dart';
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const LoginPage(),
         '/home': (context) => const HomePage(),
-        '/settings': (context) => const SettingsPage(),
+        '/settings': (context) => const ProfilePage(),
         '/following': (context) => const FollowingPage(),
       },
       onUnknownRoute: (settings) {

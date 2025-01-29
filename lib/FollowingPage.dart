@@ -56,7 +56,9 @@ class _FollowingPageState extends State<FollowingPage> {
           final followingData = jsonDecode(followingResponse.body) as List;
 
           setState(() {
-            _following = followingData.map((user) => user as Map<String, dynamic>).toList();
+            _following = followingData
+                .map((user) => user as Map<String, dynamic>)
+                .toList();
             _isLoading = false;
           });
         } else {
@@ -76,6 +78,66 @@ class _FollowingPageState extends State<FollowingPage> {
     }
   }
 
+  Future<void> _unfollowUser(String userId) async {
+    final accessToken = await TokenStorage.getAccessToken();
+    if (accessToken == null) {
+      print("⚠️ No access token found.");
+      return;
+    }
+
+    // Verify Credentials
+    try {
+      final verifyResponse = await http.get(
+        Uri.parse('$instanceUrl/api/v1/accounts/verify_credentials'),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      );
+
+      print("🔍 Verify Credentials Response: ${verifyResponse.statusCode}");
+      print("🔍 Verify Response Body: ${verifyResponse.body}");
+
+      if (verifyResponse.statusCode != 200) {
+        print("⚠️ Access token might be expired or invalid.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session expired. Please re-login.')),
+        );
+        return;
+      }
+    } catch (e) {
+      print("❌ Error verifying credentials: $e");
+      return;
+    }
+
+    // Attempt to Unfollow
+    try {
+      final unfollowUrl = '$instanceUrl/api/v1/accounts/$userId/unfollow';
+      print("🔍 Unfollow URL: $unfollowUrl");
+
+      final response = await http.post(
+        Uri.parse(unfollowUrl),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      );
+
+      print("🔍 Unfollow Response Code: ${response.statusCode}");
+      print("🔍 Unfollow Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        print("✅ Successfully unfollowed user.");
+        setState(() {
+          _following?.removeWhere((user) => user['id'] == userId);
+        });
+      } else {
+        print("❌ FAILED: ${response.statusCode} - ${response.body}");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to unfollow: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      print("❌ ERROR during unfollow: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An error occurred. Please try again.')),
+      );
+    }
+  }
 
 
   @override
@@ -87,37 +149,41 @@ class _FollowingPageState extends State<FollowingPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _following == null || _following!.isEmpty
-          ? const Center(child: Text('No users found.'))
-          : SingleChildScrollView(
-        child: _buildFollowingList(),
-      ),
+              ? const Center(child: Text('No users found.'))
+              : SingleChildScrollView(
+                  child: _buildFollowingList(),
+                ),
     );
   }
-
-
 
   Widget _buildFollowingList() {
     return Column(
       children: _following?.map<Widget>((user) {
-        return Row(
-          children: [
-            if (user['avatar'] != null)
-              CircleAvatar(
-                backgroundImage: NetworkImage(user['avatar']),
-                radius: 50,
-              ),
-            const SizedBox(height: 16),
-            if(user['username'] != null)
-              Text(
-                user['username'],
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            const SizedBox(height: 16)
-          ],
-        );
-      }).toList() ?? [],
+            return Row(
+              children: [
+                if (user['avatar'] != null)
+                  CircleAvatar(
+                    backgroundImage: NetworkImage(user['avatar']),
+                    radius: 50,
+                  ),
+                const SizedBox(height: 150, width: 25),
+                if (user['username'] != null)
+                  Text(
+                    user['username'],
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                const SizedBox(height: 150, width: 25),
+                ElevatedButton(
+                  onPressed: () => _unfollowUser(user['id']),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: const Text("Unfollow",
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          }).toList() ??
+          [],
     );
   }
-
-
 }
