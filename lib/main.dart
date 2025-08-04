@@ -1,7 +1,6 @@
-import 'package:flut_project/Profile.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'FollowingPage.dart';
 import 'Login.dart';
 import 'home_screen.dart'; // Import HomePage from the correct file
 import 'package:flut_project/UserProvider.dart';
@@ -25,8 +24,6 @@ class MyApp extends StatelessWidget {
       routes: {
       '/': (context) =>LoginPage(), // 👈 add this
         '/home': (context) => const HomePage(),
-        '/settings': (context) => const ProfilePage(),
-        '/following': (context) => const FollowingPage(),
       },
       onUnknownRoute: (settings) {
         return MaterialPageRoute(
